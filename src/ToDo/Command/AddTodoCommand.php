@@ -8,7 +8,9 @@ use Ramsey\Uuid\Uuid;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
+use Symfony\Component\Messenger\Envelope;
 use ToDo\Domain\Command\AddNewTodo;
+use ToDo\Stamp\RequestIdStamp;
 
 class AddTodoCommand extends Command
 {
@@ -25,6 +27,7 @@ class AddTodoCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $uuid = Uuid::uuid4();
+        $requestId = Uuid::uuid4()->toString();
         $helper = $this->getHelper('question');
 
         $question = new Question('Whats the task: ', 'Prepare messenger presentation');
@@ -40,7 +43,9 @@ class AddTodoCommand extends Command
         }
 
         $addNewTodo = AddNewTodo::add($uuid, $task, $deadline);
-        $this->container['command_bus']->dispatch($addNewTodo);
+        $this->container['command_bus']->dispatch(
+            (new Envelope($addNewTodo))->with(new RequestIdStamp($requestId))
+        );
 
         $output->writeln('Task added!');
     }
