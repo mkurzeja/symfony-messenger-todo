@@ -6,12 +6,17 @@ use Pimple\Container;
 use Symfony\Component\Messenger\Handler\HandlersLocator;
 use Symfony\Component\Messenger\MessageBus;
 use Symfony\Component\Messenger\Middleware\HandleMessageMiddleware;
+use Symfony\Component\Messenger\Middleware\SendMessageMiddleware;
+use Symfony\Component\Messenger\Transport\Sender\SendersLocator;
+use Symfony\Component\Messenger\Transport\Sender\SendersLocatorInterface;
 use ToDo\Command\AddTodoCommand;
 use ToDo\Command\ListTodoCommand;
 use ToDo\Domain\Command\AddNewTodo;
 use ToDo\Domain\Command\Handler\AddNewToDoHandler;
 use ToDo\Domain\ToDoRepository;
 use ToDo\Infrastructure\Repository\InMemoryTodoRepository;
+use ToDo\Transport\FileReceiver;
+use ToDo\Transport\FileSender;
 
 $container = new Container();
 $c = $container;
@@ -37,6 +42,7 @@ $c['command_bus'] = function ($c) {
     return new MessageBus(
         [
             $c['command_bus.middleware.logger'],
+            new SendMessageMiddleware($c[SendersLocatorInterface::class]),
             new HandleMessageMiddleware($c['command_bus.handler_locator']),
         ]
     );
@@ -44,6 +50,26 @@ $c['command_bus'] = function ($c) {
 
 $c[AddNewToDoHandler::class] = function ($c) {
     return new AddNewToDoHandler($c[ToDoRepository::class]);
+};
+
+/*
+ * Transport
+ */
+
+$c[FileSender::class] = function ($c) {
+    return new FileSender(__DIR__.'/../todos');
+};
+
+$c['receiver.file'] = function ($c) {
+    return new FileReceiver(__DIR__.'/../todos');
+};
+
+$c[SendersLocatorInterface::class] = function ($c) {
+    return new SendersLocator([
+        AddNewTodo::class => [FileSender::class => $c[FileSender::class]]
+    ], [
+        AddNewTodo::class => true
+    ]);
 };
 
 /*

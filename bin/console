@@ -4,10 +4,15 @@
 require_once __DIR__.'/../app/bootstrap.php';
 
 use Symfony\Component\Console\Application;
-use ToDo\Command\AddTodoCommand;
 
 $application = new Application();
 
-//$application->add($c[AddTodoCommand::class]);
+$psrContainer = new \Pimple\Psr11\Container($c);
+
+$application->add(
+    new \Symfony\Component\Messenger\Command\ConsumeMessagesCommand(
+        $psrContainer, $psrContainer
+    )
+);
 
 $application->run();
