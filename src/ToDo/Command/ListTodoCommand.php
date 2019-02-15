@@ -7,8 +7,10 @@ use Psy\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\Stamp\HandledStamp;
+use ToDo\Domain\Query\ListTodo;
 use ToDo\Domain\ToDo;
-use ToDo\Domain\ToDoRepository;
 
 class ListTodoCommand extends Command
 {
@@ -24,7 +26,16 @@ class ListTodoCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $todos = $this->container[ToDoRepository::class]->findAll();
+        /**
+         * @var $envelope Envelope
+         */
+        $envelope = $this->container['query_bus']->dispatch(new ListTodo());
+        /**
+         * @var $handledStamp HandledStamp
+         */
+        $handledStamp = $envelope->last(HandledStamp::class);
+        $todos = $handledStamp->getResult();
+
 
         $table = new Table($output);
         $table->setHeaders(['UUID', 'Task', 'Deadline', 'Done']);

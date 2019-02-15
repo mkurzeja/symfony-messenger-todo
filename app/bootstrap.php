@@ -13,6 +13,8 @@ use ToDo\Command\AddTodoCommand;
 use ToDo\Command\ListTodoCommand;
 use ToDo\Domain\Command\AddNewTodo;
 use ToDo\Domain\Command\Handler\AddNewToDoHandler;
+use ToDo\Domain\Query\Handler\ListTodoHandler;
+use ToDo\Domain\Query\ListTodo;
 use ToDo\Domain\ToDoRepository;
 use ToDo\Infrastructure\Repository\InMemoryTodoRepository;
 use ToDo\Transport\FileReceiver;
@@ -70,6 +72,27 @@ $c[SendersLocatorInterface::class] = function ($c) {
     ], [
         AddNewTodo::class => true
     ]);
+};
+
+/*
+ * Query bus
+ */
+$c[ListTodoHandler::class] = function ($c) {
+    return new ListTodoHandler($c[ToDoRepository::class]);
+};
+
+$c['query_bus.handler_locator'] = function ($c) {
+    return new HandlersLocator([
+        ListTodo::class => [ListTodoHandler::class => $c[ListTodoHandler::class]]
+    ]);
+};
+
+$c['query_bus'] = function ($c) {
+    return new MessageBus(
+        [
+            new HandleMessageMiddleware($c['query_bus.handler_locator']),
+        ]
+    );
 };
 
 /*
