@@ -1,0 +1,23 @@
+{
+    "name": "mkurzeja/todocqrs",
+    "type": "project",
+    "require": {
+        "php": ">=7.2",
+        "symfony/messenger": "^4.2",
+        "symfony/console": "^4.2",
+        "pimple/pimple": "~3.0",
+        "ramsey/uuid": "^3.8",
+        "psy/psysh": "^0.9.9"
+    },
+    "authors": [
+        {
+            "name": "Michał Kurzeja",
+            "email": "michal@accesto.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "ToDo\\": "src/ToDo"
+        }
+    }
+}
