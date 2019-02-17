@@ -13,9 +13,11 @@ use ToDo\Command\AddTodoCommand;
 use ToDo\Command\ListTodoCommand;
 use ToDo\Domain\Command\AddNewTodo;
 use ToDo\Domain\Command\Handler\AddNewToDoHandler;
+use ToDo\Domain\Event\TodoAdded;
 use ToDo\Domain\Query\Handler\ListTodoHandler;
 use ToDo\Domain\Query\ListTodo;
 use ToDo\Domain\ToDoRepository;
+use ToDo\Infrastructure\Event\Listener\SendNewTodoToEmail;
 use ToDo\Infrastructure\Repository\InMemoryTodoRepository;
 use ToDo\Transport\FileReceiver;
 use ToDo\Transport\FileSender;
@@ -51,7 +53,7 @@ $c['command_bus'] = function ($c) {
 };
 
 $c[AddNewToDoHandler::class] = function ($c) {
-    return new AddNewToDoHandler($c[ToDoRepository::class]);
+    return new AddNewToDoHandler($c[ToDoRepository::class], $c['event_bus']);
 };
 
 /*
@@ -91,6 +93,27 @@ $c['query_bus'] = function ($c) {
     return new MessageBus(
         [
             new HandleMessageMiddleware($c['query_bus.handler_locator']),
+        ]
+    );
+};
+
+/*
+ * Event bus
+ */
+$c[SendNewTodoToEmail::class] = function ($c) {
+    return new SendNewTodoToEmail();
+};
+
+$c['event_bus.handler_locator'] = function ($c) {
+    return new HandlersLocator([
+        TodoAdded::class => [SendNewTodoToEmail::class => $c[SendNewTodoToEmail::class]]
+    ]);
+};
+
+$c['event_bus'] = function ($c) {
+    return new MessageBus(
+        [
+            new HandleMessageMiddleware($c['event_bus.handler_locator'], true),
         ]
     );
 };

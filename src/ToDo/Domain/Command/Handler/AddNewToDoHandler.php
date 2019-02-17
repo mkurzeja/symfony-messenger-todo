@@ -2,7 +2,9 @@
 
 namespace ToDo\Domain\Command\Handler;
 
+use Symfony\Component\Messenger\MessageBus;
 use ToDo\Domain\Command\AddNewTodo;
+use ToDo\Domain\Event\TodoAdded;
 use ToDo\Domain\ToDo;
 use ToDo\Domain\ToDoRepository;
 
@@ -13,9 +15,15 @@ class AddNewToDoHandler
      */
     private $repository;
 
-    public function __construct(ToDoRepository $repository)
+    /**
+     * @var MessageBus
+     */
+    private $eventBus;
+
+    public function __construct(ToDoRepository $repository, MessageBus $eventBus)
     {
         $this->repository = $repository;
+        $this->eventBus = $eventBus;
     }
 
     public function __invoke(AddNewTodo $addNewTodo)
@@ -28,5 +36,8 @@ class AddNewToDoHandler
         );
 
         $this->repository->save($todo);
+
+        $todoAdded = TodoAdded::fromCommand($addNewTodo);
+        $this->eventBus->dispatch($todoAdded);
     }
 }
